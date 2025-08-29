@@ -4,19 +4,24 @@ import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ui/protectedRoute";
 import Dashboard from "./pages/Dashboard"
+import { Toaster } from "sonner";
 
 function App() {
 
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors />
       <Routes>
-        <Route path="/register" element={<Register />} />s
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

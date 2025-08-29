@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -9,10 +8,14 @@ import (
 	"backend/pkg/websocket"
 	"backend/src/controllers"
 	"database/sql"
+	"backend/middleware"
 )
 
 func serveWs(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
-	fmt.Println("WebSocket Endpoint Hit")
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		username = "guest"
+	}
 
 	conn, err := websocket.Upgrade(w, r)
 	if err != nil {
@@ -21,9 +24,9 @@ func serveWs(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &websocket.Client{
-		ID:   "guest", 
-		Conn: conn,
-		Pool: pool,
+		Username: username,
+		Conn:     conn,
+		Pool:     pool,
 	}
 
 	pool.Register <- client
@@ -31,26 +34,33 @@ func serveWs(pool *websocket.Pool, w http.ResponseWriter, r *http.Request) {
 }
 
 func setupRoutes(pool *websocket.Pool, db *sql.DB) {
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(pool, w, r)
 	})
 
-	http.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/register", func(w http.ResponseWriter, r *http.Request) {
 		controllers.RegisterUser(db, w, r)
 	})
 
-	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
 		controllers.GetUsers(db, w, r)
 	})
 
-	http.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/messages", func(w http.ResponseWriter, r *http.Request) {
 		controllers.GetMessages(db, w, r)
 	})
+
+	mux.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
+		controllers.Login(db, w, r)
+	})
+
+	handler := middleware.CorsMiddleware(mux)
+	http.ListenAndServe(":8080", handler)
 }
 
 func main() {
-	fmt.Println("Distributed Chat App starting...")
-
 	db := config.ConnectDB()
 	defer db.Close()
 
@@ -58,6 +68,4 @@ func main() {
 	go pool.Start()
 
 	setupRoutes(pool, db)
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
 }

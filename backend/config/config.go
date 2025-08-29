@@ -6,13 +6,13 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lib/pq"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func ConnectDB() *sql.DB {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No env file found!")
+		log.Println("No env file found")
 	}
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",

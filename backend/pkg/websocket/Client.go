@@ -1,21 +1,18 @@
 package websocket
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
-
+	"backend/src/models"
 	"github.com/gorilla/websocket"
+	"time"
 )
 
 type Client struct {
-	ID   string
-	Conn *websocket.Conn
-	Pool *Pool
-}
-
-type Message struct {
-	Type int    `json:"type"`
-	Body string `json:"body"`
+	ID       string
+	Username string
+	Conn     *websocket.Conn
+	Pool     *Pool
 }
 
 func (c *Client) Read() {
@@ -25,15 +22,36 @@ func (c *Client) Read() {
 	}()
 
 	for {
-		messageType, p, err := c.Conn.ReadMessage()
+		_, p, err := c.Conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		message := Message{Type: messageType, Body: string(p)}
-		c.Pool.Broadcast <- message
+		var msg struct {
+			Type     string `json:"type"`
+			Username string `json:"username"`
+			Content  string `json:"content"`
+		}
+		if err := json.Unmarshal(p, &msg); err != nil {
+			log.Println("Error parsing message:", err)
+			continue
+		}
 
-		fmt.Printf("Message received: %+v\n", message)
+		switch msg.Type {
+		case "message":
+			c.Pool.Broadcast <- models.Message{
+				Username:  msg.Username,
+				Content:   msg.Content,
+				CreatedAt: time.Now(),
+			}
+		case "join":
+			c.Pool.Broadcast <- models.Message{
+				Username:  "System",
+				Content:   msg.Username + " joined the chat",
+				CreatedAt: time.Now(),
+			}
+		}
 	}
 }
+

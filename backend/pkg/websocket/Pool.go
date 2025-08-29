@@ -1,14 +1,15 @@
 package websocket
 
 import (
-	"fmt"
+	"log"
+	"backend/src/models"
 )
 
 type Pool struct {
 	Register   chan *Client
 	Unregister chan *Client
 	Clients    map[*Client]bool
-	Broadcast  chan Message
+	Broadcast  chan models.Message
 }
 
 func NewPool() *Pool {
@@ -16,7 +17,7 @@ func NewPool() *Pool {
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
-		Broadcast:  make(chan Message),
+		Broadcast:  make(chan models.Message),
 	}
 }
 
@@ -25,29 +26,29 @@ func (pool *Pool) Start() {
 		select {
 		case client := <-pool.Register:
 			pool.Clients[client] = true
-			fmt.Println("Size of Connection Pool:", len(pool.Clients))
+			log.Printf("\n%s joined. Total clients: %d\n", client.Username, len(pool.Clients))
 
 			for c := range pool.Clients {
-				c.Conn.WriteJSON(Message{Type: 1, Body: "New User Joined...."})
+				if c != client {
+					c.Conn.WriteJSON(models.Message{
+						Username: "System",
+						Content:  client.Username + " joined the chat",
+					})
+				}
 			}
 
 		case client := <-pool.Unregister:
 			delete(pool.Clients, client)
-			fmt.Println("Size of Connection Pool:", len(pool.Clients))
-
 			for c := range pool.Clients {
-				c.Conn.WriteJSON(Message{Type: 1, Body: "User Disconnected"})
+				c.Conn.WriteJSON(models.Message{
+					Username: "System",
+					Content:  client.Username + " left the chat",
+				})
 			}
 
 		case message := <-pool.Broadcast:
-			fmt.Println("Sending message to all clients")
-
 			for c := range pool.Clients {
-				if err := c.Conn.WriteJSON(message); err != nil {
-					fmt.Println("Error broadcasting:", err)
-					c.Conn.Close()
-					delete(pool.Clients, c)
-				}
+				c.Conn.WriteJSON(message)
 			}
 		}
 	}
