@@ -1,19 +1,21 @@
-import "./App.css";
+import "./App.css"
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ui/protectedRoute";
 import Dashboard from "./pages/Dashboard"
+import ForgotPassword from "./pages/ForgotPassword"
 import { Toaster } from "sonner";
 
 function App() {
 
   return (
     <BrowserRouter>
-      <Toaster position="top-right" richColors />
+      <Toaster position="top-right" richColors={true} />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/resetpassword" element={<ForgotPassword />} />
         <Route
           path="/dashboard"
           element={

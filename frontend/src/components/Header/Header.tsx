@@ -1,4 +1,4 @@
-import { Users, MessageCircle } from "lucide-react";
+import { LogOut, MessageCircle } from "lucide-react";
 
 
 
@@ -16,8 +16,8 @@ function Header() {
           </div>
         </div>
         <div className="flex items-center space-x-2 text-gray-400">
-          <Users className="w-5 h-5" />
-          <span className="text-sm">Online</span>
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm">Logout</span>
         </div>
       </div>
     </header>

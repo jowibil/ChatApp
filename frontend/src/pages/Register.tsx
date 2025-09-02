@@ -3,8 +3,11 @@ import { useForm, type SubmitHandler } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 import axios, { AxiosError } from "axios"
-import { LuUserRound } from "react-icons/lu"
+import { LuUserRound, LuEye, LuEyeOff } from "react-icons/lu"
 import SEO from "../components/ui/SEO"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+
 
 
 const FormSchema = z.object({
@@ -19,6 +22,8 @@ const FormSchema = z.object({
 type FormData = z.infer<typeof FormSchema>
 
 export function RegisterPage() {
+  const navigate = useNavigate();
+  const [showPassword, setshowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -32,7 +37,7 @@ export function RegisterPage() {
     },
   })
 
-  
+
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
       const res = await axios.post<{ username: string }>(
@@ -45,6 +50,7 @@ export function RegisterPage() {
       })
 
       reset()
+      navigate("/")
     } catch (error) {
       const axiosError = error as AxiosError<{ message?: string }>
       toast("Registration Failed!", {
@@ -88,18 +94,22 @@ export function RegisterPage() {
             )}
           </div>
 
-          <div>
+          <div className="relative">
             <label htmlFor="password" className="font-['Raleway']">
               Password
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               {...register("password")}
               className="border rounded-md p-2 w-full"
               disabled={isSubmitting}
               required
             />
+            <button type="button" onClick={() => setshowPassword(!showPassword)}
+              className="absolute inset-y-0 top-6 right-3 flex items-center hover:text-gray-700">
+              {showPassword ? <LuEyeOff size={20} /> : <LuEye size={20} />}
+            </button>
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
